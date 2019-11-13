@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <sstream>
+#include <cassert>
 
 template <class T> inline void Log(const __m256i &value) {
   const size_t n = sizeof(__m256i) / sizeof(T);
@@ -58,7 +59,7 @@ float *genRandomSparseWeights(size_t K, size_t N, float sparsity, size_t block=1
   std::random_device rd;
   std::mt19937 gen(rd());
   float max = 1000;
-  std::uniform_int_distribution<float> dis(-max, max);
+  std::uniform_real_distribution<float> dis(-max, max);
   float thresh = sparsity * max;
   for (size_t k = 0; k < K; k++) {
     for (size_t n = 0; n < N; n+=block) {
