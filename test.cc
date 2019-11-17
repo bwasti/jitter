@@ -726,6 +726,7 @@ Func jit_parameterized(float *W, size_t N, size_t K,
 
         // b == k
         for (auto b = 0; b < bs.size(); ++b) {
+          alternator = !alternator;
           for (size_t p = 0; p < num_acc; ++p) {
             if (isHot(W, n, p, bs[b], K) && sparse_aware) {
               auto bReg = bRegs[b];
@@ -733,10 +734,8 @@ Func jit_parameterized(float *W, size_t N, size_t K,
 
               if (use_fma) {
                 if (alternator) {
-                  alternator = false;
                   cc.vfmadd231ps(pRegsAcc[p], bReg, d);
                 } else {
-                  alternator = true;
                   cc.vfmadd231ps(pRegsTmp[p], bReg, d);
                 }
               } else {
@@ -932,7 +931,6 @@ void bench(size_t n, size_t k, float s, size_t b) {
       if (differ(out2[j], out[j], 0.001, 0.01)) { \
         std::cerr << "mismatch at " << j << " (" << out2[j] << " vs "          \
                   << out[j] << ")\n";                                          \
-        dump(n, k, w);                                                         \
         dump(1, n, out2);                                                      \
         dump(1, n, out);                                                       \
         return;                                                                \
@@ -983,15 +981,15 @@ void bench(size_t n, size_t k, float s, size_t b) {
   //  CHECK(fn_4_2);
   //  TIME(fn_4_2);
   //}
+  //{
+  //  auto fn_4_1_fma = jit_parameterized(w, n, k, 4, 1, true, true, rt);
+  //  CHECK(fn_4_1_fma);
+  //  TIME( fn_4_1_fma);
+  //}
   {
-    auto fn_4_1_fma = jit_parameterized(w, n, k, 4, 1, true, true, rt);
-    CHECK(fn_4_1_fma);
-    TIME( fn_4_1_fma);
-  }
-  {
-    auto fn_4_2_fma = jit_parameterized(w, n, k, 4, 2, true, true, rt);
-    CHECK(fn_4_2_fma);
-    TIME( fn_4_2_fma);
+    auto fn_4_8_fma = jit_parameterized(w, n, k, 4, 8, true, true, rt);
+    CHECK(fn_4_8_fma);
+    TIME( fn_4_8_fma);
   }
   //{
   //  auto fn_2_4_fma = jit_parameterized(w, n, k, 2, 4, true, true, rt);
@@ -1011,9 +1009,9 @@ void bench(size_t n, size_t k, float s, size_t b) {
 }
 
 int main() {
-  for (size_t n : std::vector<size_t>{8, 32, 128, 128}) {
-    for (size_t k : std::vector<size_t>{8, 64, 128, 256}) {
-      for (float s : std::vector<float>{0.1f, 0.5f, 0.8f, 0.9f}) {
+  for (size_t n : std::vector<size_t>{8, 64, 128, 256}) {
+    for (size_t k : std::vector<size_t>{8, 32, 128, 256}) {
+      for (float s : std::vector<float>{0.1f, 0.5f, 0.8f, 0.9f, 0.95f}) {
         for (size_t b : std::vector<size_t>{1, 2, 4, 8}) {
           bench(n, k, s, b);
         }
